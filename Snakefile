@@ -67,7 +67,7 @@ rule wga:
         ref = lambda wildcards, input: resolve_path(input.ref),
         query = lambda wildcards, input: resolve_path(input.query)
     threads:
-        1
+        20
     singularity:
         mummer_container
     shell:
