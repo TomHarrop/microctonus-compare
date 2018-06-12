@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import itertools
 import pathlib2
 
 
@@ -9,6 +10,16 @@ import pathlib2
 
 def resolve_path(x):
     return(str(pathlib2.Path(x).resolve(strict=False)))
+
+
+def pairwise_combinations(x, y):
+    '''
+    Has to be output that snakemake likes. Each iteration of combo should
+    yield something like: 
+    (('ref', 'ma_FR_norm_k71_diplo1'), ('query', 'ma_MA_norm_k71_diplo0'))
+    '''
+    for combo in itertools.combinations(x, 2):
+        yield(((combo[0]), (y[0][0], combo[1][1])))
 
 
 ###########
@@ -21,8 +32,9 @@ fasta_files = ['ma_FR_norm_k71_diplo1',
                'mh_UNK_trim-decon_k41_diplo1']
 
 # containers
+bbduk_container = 'shub://TomHarrop/singularity-containers:bbmap_38.00'
 busco_container = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
-
+mummer_container = 'shub://TomHarrop/singularity-containers:mummer_4.0.0beta2'
 
 #########
 # RULES #
@@ -31,7 +43,60 @@ busco_container = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
 rule target:
     input:
         expand('output/busco/run_{fasta_file}/full_table_{fasta_file}.tsv',
-               fasta_file=fasta_files)
+               fasta_file=fasta_files),
+        expand('output/stats/{fasta_file}.tsv',
+               fasta_file=fasta_files),
+        expand('output/mummer/{ref}-vs-{query}/out.delta',
+               pairwise_combinations,
+               ref=fasta_files,
+               query=fasta_files)
+
+rule wga:
+    input:
+        ref = 'data/microctonus_assemblies/{ref}_final-scaffolds.fa',
+        query = 'data/microctonus_assemblies/{query}_final-scaffolds.fa'
+    output:
+        'output/mummer/{ref}-vs-{query}/out.delta'
+    log:
+        str(pathlib2.Path(resolve_path('output/logs/'),
+                          'mummer_{ref}-vs-{query}.log'))
+    benchmark:
+        'output/benchmarks/mummer_{ref}-vs-{query}.tsv'
+    params:
+        wd = 'output/mummer/{ref}-vs-{query}',
+        ref = lambda wildcards, input: resolve_path(input.ref),
+        query = lambda wildcards, input: resolve_path(input.query)
+    threads:
+        1
+    singularity:
+        mummer_container
+    shell:
+        'cd {params.wd} || exit 1 ; '
+        'dnadiff {params.ref} {params.query} '
+        '&> {log}'
+
+
+rule assembly_stats:
+    input:
+        'data/microctonus_assemblies/{fasta_file}_final-scaffolds.fa'
+    output:
+        'output/stats/{fasta_file}.tsv'
+    benchmark:
+        'output/benchmarks/stats_{fasta_file}.tsv'
+    log:
+        'output/logs/stats_{fasta_file}.log'
+    threads:
+        1
+    singularity:
+        bbduk_container
+    shell:
+        'stats.sh '
+        'in={input} '
+        'minscaf=1000 '
+        'format=3 '
+        'threads={threads} '
+        '> {output} '
+        '2> {log}'
 
 rule busco:
     input:
