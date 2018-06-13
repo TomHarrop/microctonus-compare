@@ -53,8 +53,8 @@ rule target:
 
 rule wga:
     input:
-        ref = 'data/microctonus_assemblies/{ref}_final-scaffolds.fa',
-        query = 'data/microctonus_assemblies/{query}_final-scaffolds.fa'
+        ref = 'output/filtered_assemblies/{ref}_final-scaffolds.fa',
+        query = 'output/filtered_assemblies/{query}_final-scaffolds.fa'
     output:
         'output/mummer/{ref}-vs-{query}/out.delta'
     log:
@@ -74,6 +74,27 @@ rule wga:
         'cd {params.wd} || exit 1 ; '
         'dnadiff {params.ref} {params.query} '
         '&> {log}'
+
+
+rule filter_short_contigs:
+    input:
+        'data/microctonus_assemblies/{fasta_file}_final-scaffolds.fa'
+    output:
+        'output/filtered_assemblies/{fasta_file}_final-scaffolds.fa'
+    benchmark:
+        'output/benchmarks/filter_short_contigs_{fasta_file}.tsv'
+    log:
+        'output/logs/filter_short_contigs_{fasta_file}.log'
+    threads:
+        1
+    singularity:
+        bbduk_container
+    shell:
+        'reformat.sh '
+        'in={input} '
+        'out={output} '
+        'fastaminlen=10000 '
+        '2> {log}'
 
 
 rule assembly_stats:
