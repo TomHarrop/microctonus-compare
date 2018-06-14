@@ -1,3 +1,4 @@
+library(grid)
 library(tidyverse)
 
 #############
@@ -59,7 +60,7 @@ ReadMcoordAndAddCoordinates <- function(coord_file){
 
 coord_files <- list.files("output/mummer",
                           recursive = TRUE,
-                          pattern = "out.mcoords",
+                          pattern = "out.1coords",
                           full.names = TRUE)
 
 ########
@@ -71,7 +72,7 @@ coord_data$ref_assembly
 
 
 YlOrRd <- RColorBrewer::brewer.pal(6, "YlOrRd")
-ggplot(coord_data,
+p <- ggplot(coord_data,
        aes(x = S1_coord / 1e6,
            xend = E1_coord / 1e6,
            y = S2_coord / 1e6,
@@ -86,3 +87,7 @@ ggplot(coord_data,
     coord_fixed() +
     geom_segment(size = 1)
 
+g <- ggplotGrob(p)
+grid.newpage()
+g$grobs[[which(g$layout$name == "panel-2-2")]] <- nullGrob()
+grid.draw(g)
