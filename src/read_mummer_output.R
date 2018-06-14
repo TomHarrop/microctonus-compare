@@ -5,7 +5,7 @@ library(tidyverse)
 #############
 
 ReadMcoordAndAddCoordinates <- function(coord_file){
-    
+    # define columns
     mcoords_cols <- c(
         "S1", "E1",
         "S2", "E2",
@@ -14,18 +14,17 @@ ReadMcoordAndAddCoordinates <- function(coord_file){
         "LENR", "LENQ",
         "COVR", "COVQ",
         "R", "Q")
-    
+    # get assembly names
     result_name <- sub("output/mummer/", "", dirname(coord_file))
+    # read data
     coords <- read_tsv(coord_file,
                        col_names = mcoords_cols)
-    
     # sort by reference postion
     sorted_coords <- coords %>% 
         arrange(-LENR, S1) %>% 
         mutate(R = factor(R, levels = unique(R))) %>% 
         arrange(R) %>% 
         mutate(hit_id = 1:n())
-    
     # calculate ref coordinates
     hits_with_ref_coords <- sorted_coords %>% 
         distinct(R, LENR, .keep_all = TRUE) %>% 
@@ -33,7 +32,6 @@ ReadMcoordAndAddCoordinates <- function(coord_file){
         full_join(sorted_coords, by = "R") %>% 
         mutate(S1_coord = ref_scaf_start_coord + S1 - 1,
                E1_coord = ref_scaf_start_coord + E1 - 1)
-    
     # calculate query coordinates          
     hits_with_query_coords <- hits_with_ref_coords %>% 
         arrange(R, S1_coord) %>% 
@@ -44,10 +42,14 @@ ReadMcoordAndAddCoordinates <- function(coord_file){
         full_join(hits_with_ref_coords, by = "Q") %>% 
         mutate(S2_coord = query_scaf_start_coord + S2 - 1,
                E2_coord = query_scaf_start_coord + E2 - 1)
+    # split the result name
     return(    
         hits_with_query_coords %>% 
-            mutate(result_name = result_name) %>% 
-            separate(result_name, c("ref_assembly", "query_assembly"), "-vs-"))
+            mutate(R = as.character(R),
+                   result_name = result_name) %>% 
+            separate(result_name,
+                     c("ref_assembly", "query_assembly"),
+                     "-vs-"))
 }
 
 
@@ -57,7 +59,7 @@ ReadMcoordAndAddCoordinates <- function(coord_file){
 
 coord_files <- list.files("output/mummer",
                           recursive = TRUE,
-                          pattern = "out.1coords",
+                          pattern = "out.mcoords",
                           full.names = TRUE)
 
 ########
@@ -68,7 +70,7 @@ coord_data <- bind_rows(lapply(coord_files, ReadMcoordAndAddCoordinates))
 coord_data$ref_assembly
 
 
-    YlOrRd <- RColorBrewer::brewer.pal(6, "YlOrRd")
+YlOrRd <- RColorBrewer::brewer.pal(6, "YlOrRd")
 ggplot(coord_data,
        aes(x = S1_coord / 1e6,
            xend = E1_coord / 1e6,
@@ -77,7 +79,7 @@ ggplot(coord_data,
            colour = `%IDY`)) +
     theme(strip.background = element_blank(),
           strip.placement = "outside") +
-    facet_grid(ref_assembly ~ query_assembly, switch = "both") +
+    facet_grid(query_assembly ~ ref_assembly, switch = "both") +
     xlab("Position in REF (MB)") + ylab("Position in QUERY (MB)") +
     scale_colour_gradientn(colours = YlOrRd,
                            guide = guide_colourbar(title = "Identity (%)")) +
