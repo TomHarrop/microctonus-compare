@@ -75,10 +75,15 @@ ggplot(all_hist_data,
     geom_vline(data = main_peaks,
                mapping = aes(xintercept = main_peak),
                linetype = 2,
-               colour = alpha(Set1[8], 0.5)) +
+               colour = alpha(Set1[2], 0.5)) +
+    geom_text(data = main_peaks,
+               mapping = aes(x = main_peak,
+                             y = 10^8,
+                             label = paste0(main_peak, "×")),
+               colour = Set1[2], hjust = -0.1) +
     geom_path()
 
 
 
-
+ggsave("kmer_plot_test.pdf", width = 10, height = 7.5, unit = "in")
 

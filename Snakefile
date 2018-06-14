@@ -93,7 +93,7 @@ rule filter_short_contigs:
         'reformat.sh '
         'in={input} '
         'out={output} '
-        'fastaminlen=10000 '
+        'minlength=10000 '
         '2> {log}'
 
 
