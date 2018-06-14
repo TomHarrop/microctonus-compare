@@ -31,7 +31,6 @@ hits_with_ref_coords <- sorted_mcoords %>%
     mutate(S1_coord = ref_scaf_start_coord + S1 - 1,
            E1_coord = ref_scaf_start_coord + E1 - 1)
 
-
 # calculate query coordinates          
 hits_with_query_coords <- hits_with_ref_coords %>% 
     arrange(R, S1_coord) %>% 
