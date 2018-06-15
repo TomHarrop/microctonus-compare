@@ -26,7 +26,8 @@ def pairwise_combinations(x, y):
 # GLOBALS #
 ###########
 
-fasta_files = ['ma_FR_norm_k71_diplo1',
+fasta_files = ['fopius_arisanus',
+               'ma_FR_norm_k71_diplo1',
                'ma_IE_trim-decon_k71_diplo0',
                'ma_MA_norm_k71_diplo0',
                'mh_UNK_trim-decon_k41_diplo1']
