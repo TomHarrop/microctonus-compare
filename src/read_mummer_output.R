@@ -73,15 +73,15 @@ coord_data$ref_assembly
 
 YlOrRd <- RColorBrewer::brewer.pal(6, "YlOrRd")
 p <- ggplot(coord_data,
-       aes(x = S1_coord / 1e6,
-           xend = E1_coord / 1e6,
-           y = S2_coord / 1e6,
-           yend = E2_coord / 1e6,
+       aes(y = S1_coord / 1e6,
+           yend = E1_coord / 1e6,
+           x = S2_coord / 1e6,
+           xend = E2_coord / 1e6,
            colour = `%IDY`)) +
     theme(strip.background = element_blank(),
           strip.placement = "outside") +
-    facet_grid(query_assembly ~ ref_assembly, switch = "both") +
-    xlab("Position in REF (MB)") + ylab("Position in QUERY (MB)") +
+    facet_grid(ref_assembly ~ query_assembly, as.table = FALSE, switch = "both") +
+    ylab("Position in REF (MB)") + xlab("Position in QUERY (MB)") +
     scale_colour_gradientn(colours = YlOrRd,
                            guide = guide_colourbar(title = "Identity (%)")) +
     coord_fixed() +
@@ -91,3 +91,4 @@ g <- ggplotGrob(p)
 grid.newpage()
 g$grobs[[which(g$layout$name == "panel-2-2")]] <- nullGrob()
 grid.draw(g)
+
