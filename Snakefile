@@ -67,6 +67,28 @@ rule plot_alignments:
         'src/plot_alignments.R'
 
 
+# plot data is a few hundred million points, make a small subset of data for testing the plot
+rule subset_plot_data:  
+    input:
+        plot_data = 'output/plot_data/mummer_combined.Rds'
+    output:
+        plot_data = 'output/plot_data/mummer_test_data.Rds'
+    log:
+        'output/logs/subset_plot_data.log'
+    benchmark:
+        'output/benchmarks/subset_plot_data.tsv'
+    threads:
+        1
+    singularity:
+        r_container
+    shell:
+        'Rscript -e \"'
+        'library(data.table) ; '
+        'x <- readRDS({input.plot_data}) ; '
+        'saveRDS(x[sample(.N, 10000)], {output.plot_data} \" '
+        '&> {log}'
+
+
 rule combine_mummer_plot_data:
     input:
         plot_data = expand('output/plot_data/mummer_{ref}-vs-{query}.Rds',
