@@ -85,7 +85,7 @@ rule subset_plot_data:
         'Rscript -e \"'
         'library(data.table) ; '
         'x <- readRDS({input.plot_data}) ; '
-        'saveRDS(x[sample(.N, 10000)], {output.plot_data} \" '
+        'saveRDS(x[sample(.N, 10000)], {output.plot_data}) \" '
         '&> {log}'
 
 
