@@ -48,10 +48,44 @@ rule target:
                fasta_file=fasta_files),
         expand('output/stats/{fasta_file}.tsv',
                fasta_file=fasta_files),
-        expand('output/plot_data/mummer_{ref}-vs-{query}.Rds',
-               pairwise_combinations,
-               ref=fasta_files,
-               query=fasta_files)
+        'output/plot_data/mummer_plot.pdf'
+
+rule plot_alignments:
+    input:
+        plot_data = 'output/plot_data/mummer_combined.Rds'
+    output:
+        plot_file = 'output/plot_data/mummer_plot.pdf'
+    log:
+        'output/logs/plot_alignments.log'
+    benchmark:
+        'output/benchmarks/plot_alignments.tsv'
+    threads:
+        1
+    singularity:
+        r_container
+    script:
+        'src/plot_alignments.R'
+
+
+rule combine_mummer_plot_data:
+    input:
+        plot_data = expand('output/plot_data/mummer_{ref}-vs-{query}.Rds',
+                           pairwise_combinations,
+                           ref=fasta_files,
+                           query=fasta_files)
+    output:
+        plot_data = 'output/plot_data/mummer_combined.Rds'
+    log:
+        'output/logs/combine_mummer_plot_data.log'
+    benchmark:
+        'output/benchmarks/combine_mummer_plot_data.tsv'
+    threads:
+        1
+    singularity:
+        r_container
+    script:
+        'src/combine_mummer_plot_data.R'
+
 
 rule read_mummer_output:
     input:
