@@ -19,6 +19,7 @@ plot_file <- snakemake@output[["plot_file"]]
 # MAIN #
 ########
 
+YlOrRd <- RColorBrewer::brewer.pal(6, "YlOrRd")
 pd <- readRDS(plot_data_file)
 gp <- ggplot(pd,
              aes(x = ref_coord / 1e6,
@@ -29,6 +30,7 @@ gp <- ggplot(pd,
           legend.position = c(3.5/4, 1.5/4),
           legend.key.size = unit(8, "pt")) +
     facet_grid(query_label ~ ref_label,
+               scales = "free",
                as.table = TRUE,
                switch = "both",
                labeller = label_parsed) +
