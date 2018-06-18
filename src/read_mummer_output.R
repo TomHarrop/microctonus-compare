@@ -38,9 +38,9 @@ MakeLabels <- function(x) {
                              "M. hyperodae")
         my_spec_strain <- ifelse(my_name_data["strain"] == "UNK",
                                  paste0("'Position in'~",
-                                        "italic(",
+                                        "italic('",
                                         my_species,
-                                        ")~'(MB)'"),
+                                        "')~'(MB)'"),
                                  paste0("'Position in'~",
                                         "italic('",
                                         my_species,
