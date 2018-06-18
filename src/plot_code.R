@@ -1,10 +1,15 @@
+library(data.table)
+library(ggplot2)
 
 # plot the alignments
 YlOrRd <- RColorBrewer::brewer.pal(6, "YlOrRd")
 
-ggplot(plot_data, aes(x = ref_coord / 1e6,
-                      y = query_coord / 1e6,
-                      colour = `%IDY`)) +
+pd <- readRDS("pd.Rds")[LEN2 > 250]
+
+ggplot(readRDS("pd.Rds")[LEN2 > 250],
+       aes(x = ref_coord / 1e6,
+           y = query_coord / 1e6,
+           colour = `%IDY`)) +
     theme(strip.background = element_blank(),
           strip.placement = "outside") +
     facet_grid(query_label ~ ref_label,

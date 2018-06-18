@@ -4,106 +4,52 @@ log <- file(snakemake@log[[1]], open = "wt")
 sink(log, type = "message")
 sink(log, append = TRUE, type = "output")
 
-library(tidyverse)
+library(data.table)
 
 #############
 # FUNCTIONS #
 #############
 
-ReadMcoordAndAddCoordinates <- function(coord_file){
-    # define columns
-    mcoords_cols <- c(
-        "S1", "E1",
-        "S2", "E2",
-        "LEN1", "LEN2",
-        "%IDY",
-        "LENR", "LENQ",
-        "COVR", "COVQ",
-        "R", "Q")
-    # get assembly names
-    result_name <- sub("output/mummer/", "", dirname(coord_file))
-    # read data
-    coords <- read_tsv(coord_file,
-                       col_names = mcoords_cols)
-    # sort by reference postion
-    sorted_coords <- coords %>% 
-        arrange(-LENR, S1) %>% 
-        mutate(R = factor(R, levels = unique(R))) %>% 
-        arrange(R) %>% 
-        mutate(hit_id = 1:n())
-    # calculate ref coordinates
-    hits_with_ref_coords <- sorted_coords %>% 
-        distinct(R, LENR, .keep_all = TRUE) %>% 
-        transmute(R, ref_scaf_start_coord = cumsum(LENR) + 1 - LENR) %>% 
-        full_join(sorted_coords, by = "R") %>% 
-        mutate(S1_coord = ref_scaf_start_coord + S1 - 1,
-               E1_coord = ref_scaf_start_coord + E1 - 1)
-    # calculate query coordinates          
-    hits_with_query_coords <- hits_with_ref_coords %>% 
-        arrange(R, S1_coord) %>% 
-        mutate(Q = factor(Q, levels = unique(Q))) %>% 
-        distinct(Q, LENQ, .keep_all = TRUE) %>% 
-        arrange(Q) %>% 
-        transmute(Q = as.character(Q),
-                  query_scaf_start_coord = cumsum(LENQ) + 1 - LENQ) %>% 
-        full_join(hits_with_ref_coords, by = "Q") %>% 
-        mutate(S2_coord = query_scaf_start_coord + S2 - 1,
-               E2_coord = query_scaf_start_coord + E2 - 1)
-    # split the result name
-    return(    
-        hits_with_query_coords %>% 
-            mutate(R = as.character(R),
-                   result_name = result_name) %>% 
-            separate(result_name,
-                     c("ref_assembly", "query_assembly"),
-                     "-vs-"))
+FillWithNAs <- function(x1, x2, y1, y2) {
+    xs <- seq(x1, x2)
+    ys <- seq(y1, y2)
+    if(length(xs) == length(ys)) {
+        return(list(ref_coord = xs,
+                    query_coord = ys))
+    }else if(length(xs) > length(ys)){
+        ld <- length(xs) - length(ys)
+        return(list(ref_coord = xs,
+                    query_coord = c(ys, rep(NA, ld))))
+    } else if(length(xs) > length(ys)) {
+        ld <- length(ys) - length(xs)
+        return(list(ref_coord = c(xs, rep(NA, ld)),
+                    query_coord = ys))
+    }
 }
 
 MakeLabels <- function(x) {
     if(x == "fopius_arisanus"){
         return("'Position in'~italic('Fopius arisanus')~'(MB)'")
+    } else {
+        my_name_data <- unlist(strsplit(x, "_"))
+        names(my_name_data) <- c("species", "strain", "processing", "kmer", "diplo")
+        my_species <- ifelse(my_name_data["species"] == "ma",
+                             "M. aethiopoides",
+                             "M. hyperodae")
+        my_spec_strain <- ifelse(my_name_data["strain"] == "UNK",
+                                 paste0("'Position in'~",
+                                        "italic(",
+                                        my_species,
+                                        ")~'(MB)'"),
+                                 paste0("'Position in'~",
+                                        "italic('",
+                                        my_species,
+                                        "')~'",
+                                        my_name_data["strain"],
+                                        "'~'(MB)'"))
+        return(my_spec_strain)
     }
-    my_name_data <- tibble(assembly_name = x) %>% 
-        separate(col = assembly_name,
-                 into = c("species", "strain", "processing", "kmer", "diplo"),
-                 sep = "_") %>% 
-        mutate(
-            species = if_else(
-                species == "ma",
-                "M. aethiopoides",
-                "M. hyperodae"),
-            spec_strain = if_else(
-                strain == "UNK",
-                paste0("'Position in'~",
-                       "italic(",
-                       species,
-                       ")~'(MB)'"),
-                paste0("'Position in'~",
-                       "italic('",
-                       species,
-                       "')~'",
-                       strain,
-                       "'~'(MB)'")))
-    return(my_name_data$spec_strain)
 }
-
-MakeMatchTibble <- function(coord_tbl){
-    ref_coord <- seq(coord_tbl$S1_coord, coord_tbl$E1_coord)
-    query_coord <- seq(coord_tbl$S2_coord, coord_tbl$E2_coord)
-    if (length(ref_coord) > length(query_coord)){
-        length_diff <- length(ref_coord) - length(query_coord)
-        query_coord <- c(query_coord, rep(NA, length_diff))
-    } else if (length(ref_coord) < length(query_coord)){
-        length_diff <- length(query_coord) - length(ref_coord)
-        ref_coord <- c(ref_coord, rep(NA, length_diff))
-    }
-    tibble(ref_assembly = coord_tbl$ref_assembly[[1]],
-           query_assembly = coord_tbl$query_assembly[[1]],
-           ref_coord, 
-           query_coord,
-           `%IDY` = coord_tbl$`%IDY`[[1]])
-}
-
 
 ###########
 # GLOBALS #
@@ -112,32 +58,82 @@ MakeMatchTibble <- function(coord_tbl){
 coord_file <- snakemake@input[["coords_file"]]
 plot_data_file <- snakemake@output[["plot_data"]]
 
+mcoords_cols <- c(
+    "S1", "E1",
+    "S2", "E2",
+    "LEN1", "LEN2",
+    "%IDY",
+    "LENR", "LENQ",
+    "COVR", "COVQ",
+    "R", "Q")
+
 # dev
 # coord_files <- list.files("output/mummer",
 #                           recursive = TRUE,
 #                           pattern = "out.1coords",
 #                           full.names = TRUE)
 # coord_file <- coord_files[[1]]
+# coord_file <- "output/mummer/ma_FR_norm_k71_diplo1-vs-ma_IE_trim-decon_k71_diplo0//out.1coords"
 
 ########
 # MAIN #
 ########
 
 # read the mummer file
-coord_data <- ReadMcoordAndAddCoordinates(coord_file)
+coord_data <- fread(coord_file,
+                    col.names = mcoords_cols)
 
-# make into a matrix of matches
-plot_data <- coord_data %>% group_by(ref_assembly, query_assembly, hit_id) %>% 
-    do(MakeMatchTibble(.)) %>% 
-    ungroup(x) %>% 
-    group_by(ref_assembly, query_assembly, ref_coord, query_coord) %>% 
-    slice(which.max(`%IDY`)) %>% 
-    ungroup() %>% 
-    mutate(ref_label = MakeLabels(ref_assembly[[1]]),
-           query_label = MakeLabels(query_assembly[[1]]))
+# get assembly names
+result_name <- sub("output/mummer/", "", dirname(coord_file))
+
+# sort by reference postion
+setorder(coord_data, -LENR, S1)
+coord_data[, R := factor(R, levels = unique(R))]
+setorder(coord_data, R)
+coord_data[, hit_id := seq(1, .N)]
+
+# calculate ref coordinates
+ref_start_coords <- unique(coord_data, by = "R")[
+    , .(R, ref_scaf_start_coord = cumsum(LENR) + 1 - LENR)]
+coord_data <- merge(coord_data,
+                    ref_start_coords,
+                    all.x = TRUE,
+                    by = "R")
+coord_data[, c("S1_coord", "E1_coord") :=
+               .(ref_scaf_start_coord + S1 - 1,
+                 ref_scaf_start_coord + E1 - 1)]
+
+# calculate query coordinates
+setorder(coord_data, R, S1_coord)
+coord_data[, Q := factor(Q, levels = unique(Q))]
+setorder(coord_data, Q)
+query_start_coords <- unique(coord_data, by = "Q")[
+    , .(Q, query_scaf_start_coord = cumsum(LENQ) + 1 - LENQ)]
+coord_data <- merge(coord_data,
+                    query_start_coords,
+                    all.x = TRUE,
+                    by = "Q")
+coord_data[, c("S2_coord", "E2_coord") :=
+               .(query_scaf_start_coord + S2 - 1,
+                 query_scaf_start_coord + E2 - 1)]
+coord_data[, c("ref_assembly", "query_assembly") := 
+               tstrsplit(result_name, split = "-vs-")]
+
+# make full coordinates
+plot_data <- merge(
+    coord_data,
+    coord_data[, FillWithNAs(S1_coord, E1_coord, S2_coord, E2_coord),
+               by = hit_id],
+    all = TRUE,
+    by = "hit_id")
+
+# add labels
+plot_data[, ref_label := MakeLabels(ref_assembly), by = ref_assembly]
+plot_data[, query_label := MakeLabels(query_assembly), by = query_assembly]
 
 # write to R binary file
-saveRDS(plot_data, plot_data_file)
+saveRDS(plot_data[LEN2 > 250], plot_data_file)
+# saveRDS(plot_data, "pd.Rds")
 
 # write log
 sessionInfo()
