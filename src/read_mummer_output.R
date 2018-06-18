@@ -43,7 +43,8 @@ MakeLabels <- function(x) {
                                  paste0("italic('",
                                         my_species,
                                         "')~'",
-                                        my_name_data["strain"]))
+                                        my_name_data["strain"],
+                                        "'"))
         return(my_spec_strain)
     }
 }
