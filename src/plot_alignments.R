@@ -13,7 +13,7 @@ library(grid)
 ###########
 
 plot_data_file <- snakemake@input[["plot_data"]]
-plot_file <- snakemake@output[["plot_file"]]
+jpeg_file <- snakemake@output[["jpeg_file"]]
 
 ########
 # MAIN #
@@ -52,11 +52,17 @@ for(panel in hidden_panels){
     g$grobs[[which(g$layout$name == panel)]] <- nullGrob()
 }
 
-# write to pdf
-pdf(plot_file, width = 10, height = 7.5, bg = "transparent")
+# write to jpeg since PDF is too big
+jpeg(jpeg_file, width = 10, height = 7.5, units = "in", res = 300, bg = "transparent")
 grid.newpage()
 grid.draw(g)
 dev.off()
+
+# write to pdf
+# pdf(plot_file, width = 10, height = 7.5, bg = "transparent")
+# grid.newpage()
+# grid.draw(g)
+# dev.off()
 
 # write log
 sessionInfo()

@@ -11,6 +11,7 @@ gp <- ggplot(pd,
        aes(x = ref_coord / 1e6,
            y = query_coord / 1e6,
            colour = `%IDY`)) +
+    coord_fixed() +
     theme(strip.background = element_blank(),
           strip.placement = "outside",
           legend.position = c(3.5/4, 1.5/4),
@@ -48,6 +49,12 @@ grid.newpage()
 grid.draw(g)
 dev.off()
 
+# write to jpeg
+jpeg_file <- "test.jpeg"
+jpeg(jpeg_file, width = 10, height = 7.5, units = "in", res = 300, bg = "transparent")
+grid.newpage()
+grid.draw(g)
+dev.off()
 
 grid.newpage()
 grid.draw(g)
