@@ -36,6 +36,7 @@ fasta_files = ['fopius_arisanus',
 bbduk_container = 'shub://TomHarrop/singularity-containers:bbmap_38.00'
 busco_container = 'shub://TomHarrop/singularity-containers:busco_3.0.2'
 mummer_container = 'shub://TomHarrop/singularity-containers:mummer_4.0.0beta2'
+r_container = 'shub://TomHarrop/singularity-containers:r_3.5.0'
 
 #########
 # RULES #
@@ -47,17 +48,34 @@ rule target:
                fasta_file=fasta_files),
         expand('output/stats/{fasta_file}.tsv',
                fasta_file=fasta_files),
-        expand('output/mummer/{ref}-vs-{query}/out.delta',
+        expand('output/plot_data/mummer_{ref}-vs-{query}.Rds',
                pairwise_combinations,
                ref=fasta_files,
                query=fasta_files)
+
+rule read_mummer_output:
+    input:
+        coords_file = 'output/mummer/{ref}-vs-{query}/out.1coords',
+    output:
+        plot_data = 'output/plot_data/mummer_{ref}-vs-{query}.Rds'
+    log:
+        'output/logs/read_mummer_output_{ref}-vs-{query}.log'
+    benchmark:
+        'output/benchmarks/read_mummer_output_{ref}-vs-{query}.tsv'
+    threads:
+        1
+    singularity:
+        r_container
+    script:
+        'src/read_mummer_output.R'
 
 rule wga:
     input:
         ref = 'output/filtered_assemblies/{ref}_final-scaffolds.fa',
         query = 'output/filtered_assemblies/{query}_final-scaffolds.fa'
     output:
-        'output/mummer/{ref}-vs-{query}/out.delta'
+        'output/mummer/{ref}-vs-{query}/out.delta',
+        'output/mummer/{ref}-vs-{query}/out.1coords'
     log:
         str(pathlib2.Path(resolve_path('output/logs/'),
                           'mummer_{ref}-vs-{query}.log'))

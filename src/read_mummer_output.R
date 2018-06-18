@@ -1,4 +1,9 @@
-library(grid)
+#!/usr/bin/env Rscript
+
+log <- file(snakemake@log[[1]], open = "wt")
+sink(log, type = "message")
+sink(log, append = TRUE, type = "output")
+
 library(tidyverse)
 
 #############
@@ -104,17 +109,21 @@ MakeMatchTibble <- function(coord_tbl){
 # GLOBALS #
 ###########
 
+coord_file <- snakemake@input[["coords_file"]]
+plot_data_file <- snakemake@output[["plot_data"]]
+
 # dev
-coord_files <- list.files("output/mummer",
-                          recursive = TRUE,
-                          pattern = "out.1coords",
-                          full.names = TRUE)
-coord_file <- coord_files[[1]]
+# coord_files <- list.files("output/mummer",
+#                           recursive = TRUE,
+#                           pattern = "out.1coords",
+#                           full.names = TRUE)
+# coord_file <- coord_files[[1]]
 
 ########
 # MAIN #
 ########
 
+# read the mummer file
 coord_data <- ReadMcoordAndAddCoordinates(coord_file)
 
 # make into a matrix of matches
@@ -127,44 +136,9 @@ plot_data <- coord_data %>% group_by(ref_assembly, query_assembly, hit_id) %>%
     mutate(ref_label = MakeLabels(ref_assembly[[1]]),
            query_label = MakeLabels(query_assembly[[1]]))
 
-ggplot(plot_data, aes(x = ref_coord / 1e6,
-                y = query_coord / 1e6,
-                colour = `%IDY`)) +
-    theme(strip.background = element_blank(),
-          strip.placement = "outside") +
-    facet_grid(query_label ~ ref_label,
-               as.table = FALSE,
-               switch = "both",
-               labeller = label_parsed) +
-    xlab(NULL) + ylab(NULL) +
-    scale_colour_gradientn(colours = YlOrRd,
-                           guide = guide_colourbar(title = "Identity (%)")) +
-    geom_point(shape = 18, alpha = 0.5)
+# write to R binary file
+saveRDS(plot_data, plot_data_file)
 
-# you can't see fopius on this because the matches are so short, but that's ok -
-# fopius is only for genetic distance
-
-YlOrRd <- RColorBrewer::brewer.pal(6, "YlOrRd")
-p <- ggplot(filter(coord_data, LEN2 > 2000),
-            aes(x = S1_coord / 1e6,
-                xend = E1_coord / 1e6,
-                y = S2_coord / 1e6,
-                yend = E2_coord / 1e6,
-                colour = `%IDY`)) +
-    theme(strip.background = element_blank(),
-          strip.placement = "outside") +
-    facet_grid(query_assembly ~ ref_assembly,
-               as.table = FALSE,
-               switch = "both") +
-    xlab("Position in REF (MB)") + ylab("Position in QUERY (MB)") +
-    scale_colour_gradientn(colours = YlOrRd,
-                           guide = guide_colourbar(title = "Identity (%)")) +
-    #    coord_fixed() +
-    geom_segment(size = 1)
-p
-
-g <- ggplotGrob(p)
-grid.newpage()
-#g$grobs[[which(g$layout$name == "panel-2-2")]] <- nullGrob()
-grid.draw(g)
+# write log
+sessionInfo()
 
