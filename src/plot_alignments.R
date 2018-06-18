@@ -53,7 +53,7 @@ for(panel in hidden_panels){
 }
 
 # write to pdf
-cairo_pdf(plot_file, width = 10, height = 7.5, bg = "transparent")
+pdf(plot_file, width = 10, height = 7.5, bg = "transparent")
 grid.newpage()
 grid.draw(g)
 dev.off()

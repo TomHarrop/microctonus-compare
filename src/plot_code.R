@@ -34,10 +34,21 @@ hidden_panels <- c("panel-1-2",
                    "panel-2-4",
                    "panel-3-4")
 
+
 g <- ggplotGrob(gp)
 for(panel in hidden_panels){
     g$grobs[[which(g$layout$name == panel)]] <- nullGrob()
 }
+
+
+# write to pdf
+plot_file <- "test.pdf"
+pdf(plot_file, width = 10, height = 7.5, bg = "transparent")
+grid.newpage()
+grid.draw(g)
+dev.off()
+
+
 grid.newpage()
 grid.draw(g)
 
