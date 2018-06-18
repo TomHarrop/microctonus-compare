@@ -27,8 +27,7 @@ gp <- ggplot(pd,
     theme(strip.background = element_blank(),
           strip.placement = "outside",
           legend.position = c(3.5/4, 1.5/4),
-          legend.key.size = unit(8, "pt"),
-          legend.) +
+          legend.key.size = unit(8, "pt")) +
     facet_grid(query_label ~ ref_label,
                as.table = TRUE,
                switch = "both",
