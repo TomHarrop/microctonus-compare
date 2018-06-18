@@ -36,8 +36,9 @@ ReadMcoordAndAddCoordinates <- function(coord_file){
     # calculate query coordinates          
     hits_with_query_coords <- hits_with_ref_coords %>% 
         arrange(R, S1_coord) %>% 
-        mutate(Q = factor(Q)) %>% 
+        mutate(Q = factor(Q, levels = unique(Q))) %>% 
         distinct(Q, LENQ, .keep_all = TRUE) %>% 
+        arrange(Q) %>% 
         transmute(Q = as.character(Q),
                   query_scaf_start_coord = cumsum(LENQ) + 1 - LENQ) %>% 
         full_join(hits_with_ref_coords, by = "Q") %>% 
@@ -53,42 +54,117 @@ ReadMcoordAndAddCoordinates <- function(coord_file){
                      "-vs-"))
 }
 
+MakeLabels <- function(x) {
+    if(x == "fopius_arisanus"){
+        return("'Position in'~italic('Fopius arisanus')~'(MB)'")
+    }
+    my_name_data <- tibble(assembly_name = x) %>% 
+        separate(col = assembly_name,
+                 into = c("species", "strain", "processing", "kmer", "diplo"),
+                 sep = "_") %>% 
+        mutate(
+            species = if_else(
+                species == "ma",
+                "M. aethiopoides",
+                "M. hyperodae"),
+            spec_strain = if_else(
+                strain == "UNK",
+                paste0("'Position in'~",
+                       "italic(",
+                       species,
+                       ")~'(MB)'"),
+                paste0("'Position in'~",
+                       "italic('",
+                       species,
+                       "')~'",
+                       strain,
+                       "'~'(MB)'")))
+    return(my_name_data$spec_strain)
+}
+
+MakeMatchTibble <- function(coord_tbl){
+    ref_coord <- seq(coord_tbl$S1_coord, coord_tbl$E1_coord)
+    query_coord <- seq(coord_tbl$S2_coord, coord_tbl$E2_coord)
+    if (length(ref_coord) > length(query_coord)){
+        length_diff <- length(ref_coord) - length(query_coord)
+        query_coord <- c(query_coord, rep(NA, length_diff))
+    } else if (length(ref_coord) < length(query_coord)){
+        length_diff <- length(query_coord) - length(ref_coord)
+        ref_coord <- c(ref_coord, rep(NA, length_diff))
+    }
+    tibble(ref_assembly = coord_tbl$ref_assembly[[1]],
+           query_assembly = coord_tbl$query_assembly[[1]],
+           ref_coord, 
+           query_coord,
+           `%IDY` = coord_tbl$`%IDY`[[1]])
+}
+
 
 ###########
 # GLOBALS #
 ###########
 
+# dev
 coord_files <- list.files("output/mummer",
                           recursive = TRUE,
                           pattern = "out.1coords",
                           full.names = TRUE)
+coord_file <- coord_files[[1]]
 
 ########
 # MAIN #
 ########
 
-coord_data <- bind_rows(lapply(coord_files, ReadMcoordAndAddCoordinates))
-coord_data$ref_assembly
+coord_data <- ReadMcoordAndAddCoordinates(coord_file)
 
+# make into a matrix of matches
+plot_data <- coord_data %>% group_by(ref_assembly, query_assembly, hit_id) %>% 
+    do(MakeMatchTibble(.)) %>% 
+    ungroup(x) %>% 
+    group_by(ref_assembly, query_assembly, ref_coord, query_coord) %>% 
+    slice(which.max(`%IDY`)) %>% 
+    ungroup() %>% 
+    mutate(ref_label = MakeLabels(ref_assembly[[1]]),
+           query_label = MakeLabels(query_assembly[[1]]))
 
-YlOrRd <- RColorBrewer::brewer.pal(6, "YlOrRd")
-p <- ggplot(coord_data,
-       aes(y = S1_coord / 1e6,
-           yend = E1_coord / 1e6,
-           x = S2_coord / 1e6,
-           xend = E2_coord / 1e6,
-           colour = `%IDY`)) +
+ggplot(plot_data, aes(x = ref_coord / 1e6,
+                y = query_coord / 1e6,
+                colour = `%IDY`)) +
     theme(strip.background = element_blank(),
           strip.placement = "outside") +
-    facet_grid(ref_assembly ~ query_assembly, as.table = FALSE, switch = "both") +
-    ylab("Position in REF (MB)") + xlab("Position in QUERY (MB)") +
+    facet_grid(query_label ~ ref_label,
+               as.table = FALSE,
+               switch = "both",
+               labeller = label_parsed) +
+    xlab(NULL) + ylab(NULL) +
     scale_colour_gradientn(colours = YlOrRd,
                            guide = guide_colourbar(title = "Identity (%)")) +
-    coord_fixed() +
+    geom_point(shape = 18, alpha = 0.5)
+
+# you can't see fopius on this because the matches are so short, but that's ok -
+# fopius is only for genetic distance
+
+YlOrRd <- RColorBrewer::brewer.pal(6, "YlOrRd")
+p <- ggplot(filter(coord_data, LEN2 > 2000),
+            aes(x = S1_coord / 1e6,
+                xend = E1_coord / 1e6,
+                y = S2_coord / 1e6,
+                yend = E2_coord / 1e6,
+                colour = `%IDY`)) +
+    theme(strip.background = element_blank(),
+          strip.placement = "outside") +
+    facet_grid(query_assembly ~ ref_assembly,
+               as.table = FALSE,
+               switch = "both") +
+    xlab("Position in REF (MB)") + ylab("Position in QUERY (MB)") +
+    scale_colour_gradientn(colours = YlOrRd,
+                           guide = guide_colourbar(title = "Identity (%)")) +
+    #    coord_fixed() +
     geom_segment(size = 1)
+p
 
 g <- ggplotGrob(p)
 grid.newpage()
-g$grobs[[which(g$layout$name == "panel-2-2")]] <- nullGrob()
+#g$grobs[[which(g$layout$name == "panel-2-2")]] <- nullGrob()
 grid.draw(g)
 
