@@ -48,7 +48,8 @@ rule target:
                fasta_file=fasta_files),
         expand('output/stats/{fasta_file}.tsv',
                fasta_file=fasta_files),
-        'output/plot_data/mummer_plot.pdf'
+        'output/plot_data/mummer_plot.pdf',
+        'output/plot_data/mummer_test_data.Rds'
 
 rule plot_alignments:
     input:

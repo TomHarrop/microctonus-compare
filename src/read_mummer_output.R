@@ -29,7 +29,7 @@ FillWithNAs <- function(x1, x2, y1, y2) {
 
 MakeLabels <- function(x) {
     if(x == "fopius_arisanus"){
-        return("'Position in'~italic('Fopius arisanus')~'(MB)'")
+        return("italic('Fopius arisanus')")
     } else {
         my_name_data <- unlist(strsplit(x, "_"))
         names(my_name_data) <- c("species", "strain", "processing", "kmer", "diplo")
@@ -37,16 +37,13 @@ MakeLabels <- function(x) {
                              "M. aethiopoides",
                              "M. hyperodae")
         my_spec_strain <- ifelse(my_name_data["strain"] == "UNK",
-                                 paste0("'Position in'~",
-                                        "italic('",
+                                 paste0("italic('",
                                         my_species,
-                                        "')~'(MB)'"),
-                                 paste0("'Position in'~",
-                                        "italic('",
+                                        "')"),
+                                 paste0("italic('",
                                         my_species,
                                         "')~'",
-                                        my_name_data["strain"],
-                                        "'~'(MB)'"))
+                                        my_name_data["strain"]))
         return(my_spec_strain)
     }
 }

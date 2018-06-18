@@ -1,31 +1,45 @@
 library(data.table)
 library(ggplot2)
+library(grid)
 
 # plot the alignments
 YlOrRd <- RColorBrewer::brewer.pal(6, "YlOrRd")
 
-pd <- readRDS("pd.Rds")[LEN2 > 250]
+pd <- readRDS("output/plot_data/mummer_test_data.Rds")
 
-ggplot(readRDS("pd.Rds")[LEN2 > 250],
+gp <- ggplot(pd,
        aes(x = ref_coord / 1e6,
            y = query_coord / 1e6,
            colour = `%IDY`)) +
     theme(strip.background = element_blank(),
-          strip.placement = "outside") +
+          strip.placement = "outside",
+          legend.position = c(3.5/4, 1.5/4),
+          legend.key.size = unit(8, "pt"),
+          legend.) +
     facet_grid(query_label ~ ref_label,
-               as.table = FALSE,
+               as.table = TRUE,
                switch = "both",
                labeller = label_parsed) +
-    xlab(NULL) + ylab(NULL) +
+    xlab("Position in reference (MB)") + 
+    ylab("Position in query (MB)") +
     scale_colour_gradientn(colours = YlOrRd,
                            guide = guide_colourbar(title = "Identity (%)")) +
     geom_point(shape = 18, alpha = 0.5)
 
-g <- ggplotGrob(p)
-grid.newpage()
-#g$grobs[[which(g$layout$name == "panel-2-2")]] <- nullGrob()
-grid.draw(g)
+# hide the empty panels
+hidden_panels <- c("panel-1-2",
+                   "panel-1-3",
+                   "panel-1-4",
+                   "panel-2-3",
+                   "panel-2-4",
+                   "panel-3-4")
 
+g <- ggplotGrob(gp)
+for(panel in hidden_panels){
+    g$grobs[[which(g$layout$name == panel)]] <- nullGrob()
+}
+grid.newpage()
+grid.draw(g)
 
 # you can't see fopius on this version, because the matches are so short, but that's ok -
 # fopius is only for genetic distance
