@@ -77,8 +77,7 @@ jpeg(jpeg_file,
      width = 208,
      height = 205,
      units = "mm",
-     res = 300,
-     bg = "transparent")
+     res = 300)
 grid.newpage()
 grid.draw(g)
 dev.off()

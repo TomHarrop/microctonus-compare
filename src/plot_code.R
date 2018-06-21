@@ -132,8 +132,9 @@ dd[is.na(img_url), img_url := "circ_img/CRW.jpg"]
 # tree. scale is average # of SNPs per base
 gt <- ggtree(nj2, ladderize = FALSE, size = 1) +
     xlim(0, 0.055) +
+    ylim(0.75, 4.25) +
     theme_poster +
-    theme(legend.position = "right",
+    theme(legend.position = "top",
           panel.background = element_blank(),
           axis.text.y = element_blank(),
           axis.ticks.y = element_blank(),
@@ -151,29 +152,29 @@ gt2 <- gt  %<+%
                 align = FALSE,
                 offset = 0.0075,
                 hjust = 0,
-                family = "Lato",
-                size = 14)+
+                family = "Lato")+
     geom_tiplab(aes(label = name,
                     colour = sexual,
                     image = img_url),
-                offset = 0.0005,
+                offset = 0.0008,
                 hjust = 0,
                 align = FALSE,
                 geom = "image",
                 size = 0.1) +
-    geom_tippoint(aes(shape = social), size = 3)
+    geom_tippoint(aes(shape = social), size = 3, colour = set1[3])
 
 # set aspect ratio
 gr <- ggplotGrob(gt2)
-for (k in 1:length(gr$grobs[[6]]$children[[6]]$children)) {
-    gr$grobs[[6]]$children[[6]]$children[[k]]$height <- unit(0.1, "native")
-    gr$grobs[[6]]$children[[6]]$children[[k]]$width <- unit(0.1, "native")
-}
+# for (k in 1:length(gr$grobs[[6]]$children[[6]]$children)) {
+#     gr$grobs[[6]]$children[[6]]$children[[k]]$height <- unit(0.1, "native")
+#     gr$grobs[[6]]$children[[6]]$children[[k]]$width <- unit(0.1, "native")
+# }
 
- pdf(file = "test.pdf",
-     width = convertUnit(unit(216, "mm"), "in", valueOnly = TRUE),
-     height = convertUnit(unit(216, "mm"), "in", valueOnly = TRUE))
+cairo_pdf(file = "test.pdf",
+    width = convertUnit(unit(147, "mm"), "in", valueOnly = TRUE),
+    height = convertUnit(unit(147, "mm"), "in", valueOnly = TRUE))
 grid.newpage()
 grid.draw(gr)
 dev.off()
-
+Sys.setenv(R_GSCMD = "/usr/local/bin/gsx")
+embed_fonts("test.pdf", )
