@@ -3,6 +3,33 @@ library(ggplot2)
 library(ggtree)
 library(grid)
 
+#############
+# FUNCTIONS #
+#############
+
+
+MakeLabels <- function(x) {
+    if(x == "fopius_arisanus"){
+        return("italic('Fopius arisanus')")
+    } else {
+        my_name_data <- unlist(strsplit(x, "_"))
+        names(my_name_data) <- c("species", "strain", "processing", "kmer", "diplo")
+        my_species <- ifelse(my_name_data["species"] == "ma",
+                             "M. aethiopoides",
+                             "M. hyperodae")
+        my_spec_strain <- ifelse(my_name_data["strain"] == "UNK",
+                                 paste0("italic('",
+                                        my_species,
+                                        "')"),
+                                 paste0("italic('",
+                                        my_species,
+                                        "')~'",
+                                        my_name_data["strain"],
+                                        "'"))
+        return(my_spec_strain)
+    }
+}
+
 #########
 # SETUP #
 #########
@@ -27,7 +54,8 @@ if(my_sis == "Darwin") {
 }
 
 # ggplot theme
-theme_poster <- ggplot2::theme_grey(base_size = 18, base_family = "Lato") +
+theme_poster <- ggplot2::theme_grey(base_size = 18,
+                                    base_family = "Lato") +
     ggplot2::theme(plot.background =
                        ggplot2::element_rect(fill = "transparent",
                                              colour = NA),
@@ -47,9 +75,9 @@ heatscale <- RColorBrewer::brewer.pal(6, "YlOrRd")
 pd <- readRDS("output/plot_data/mummer_test_data.Rds")
 
 gp <- ggplot(pd,
-       aes(x = ref_coord / 1e6,
-           y = query_coord / 1e6,
-           colour = `%IDY`)) +
+             aes(x = ref_coord / 1e6,
+                 y = query_coord / 1e6,
+                 colour = `%IDY`)) +
     coord_fixed() +
     theme(strip.background = element_blank(),
           strip.placement = "outside",
@@ -80,13 +108,6 @@ for(panel in hidden_panels){
     g$grobs[[which(g$layout$name == panel)]] <- nullGrob()
 }
 
-# write to pdf
-plot_file <- "test.pdf"
-pdf(plot_file, width = 10, height = 7.5, bg = "transparent")
-grid.newpage()
-grid.draw(g)
-dev.off()
-
 # write to jpeg
 jpeg_file <- "test.jpeg"
 jpeg(jpeg_file, width = 10, height = 7.5, units = "in", res = 300, bg = "transparent")
@@ -94,14 +115,12 @@ grid.newpage()
 grid.draw(g)
 dev.off()
 
-grid.newpage()
-grid.draw(g)
 
 #################
 # distance tree #
 #################
 
-distance_matrix <- readRDS()
+distance_matrix <- readRDS("output/plot_data/distance_matrix.Rds")
 
 nj <- ape::root(ape::nj(distance_matrix), "mh_UNK_trim-decon_k41_diplo1")
 negbranch <- which(nj$edge.length < 0)
@@ -110,9 +129,6 @@ nj$edge.length[negbranch] <- 0
 nj$edge.length[negbranch + 1] <- nj$edge.length[negbranch + 1] + branchdiff
 
 nj2 <- ape::drop.tip(nj, "fopius_arisanus")
-
-
-
 
 # tree annotation
 dd <- data.table(tip.label = nj2$tip.label)
@@ -133,9 +149,11 @@ dd[is.na(img_url), img_url := "circ_img/CRW.jpg"]
 
 # tree. scale is average # of SNPs per base
 gt <- ggtree(nj2, ladderize = FALSE, size = 1) +
-    xlim(0, 0.05) +
-    theme_tree2(bgcolor = "transparent") +
+    xlim(0, 0.055) +
+    theme_poster +
     theme(legend.position = "right",
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank(),
           axis.title.x = element_text(hjust = 1),
           axis.line.x = element_line(size = 0.5)) +
     scale_color_brewer(palette = "Set1",
@@ -149,19 +167,23 @@ gt2 <- gt  %<+%
                 parse = TRUE,
                 align = FALSE,
                 offset = 0.0035,
-                hjust = 0)+
+                hjust = 0,
+                family = "Lato")+
     geom_tiplab(aes(label = name,
                     colour = sexual,
                     image = img_url),
                 offset = 0.0005,
                 hjust = 0,
                 align = FALSE,
-                geom = "image",
-                size = 0.05,
-                by = 'width') +
+                geom = "image") +
     scale_size_identity() +
     geom_tippoint(aes(shape = social), size = 3)
 gt2
 
 
-ggsave("test.pdf", gt2, width = 147, height = 216, units = "mm")
+ggsave("test.jpeg",
+       device = "jpeg",
+       gt2,
+       width = 147,
+       height = 216,
+       units = "mm")

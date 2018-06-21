@@ -60,6 +60,8 @@ distance_matrix_file <- snakemake@output[["distance_matrix"]]
 #                            recursive = TRUE,
 #                            pattern = "out.report",
 #                            full.names = TRUE)
+# distance_matrix_file <- "output/plot_data/distance_matrix.Rds"
+
 ########
 # MAIN #
 ########

@@ -22,26 +22,8 @@ jpeg_file <- snakemake@output[["jpeg_file"]]
 # MAIN #
 ########
 
-# setup
-# lato for plots
-sysfonts::font_add(
-    "Lato",
-    regular = "/Volumes/userdata/staff_users/tomharrop/fonts/Lato2OFL/Lato-Regular.ttf",
-    bold = "/Volumes/userdata/staff_users/tomharrop/fonts/Lato2OFL/Lato-Bold.ttf",
-    italic = "/Volumes/userdata/staff_users/tomharrop/fonts/Lato2OFL/Lato-Italic.ttf",
-    bolditalic = "/Volumes/userdata/staff_users/tomharrop/fonts/Lato2OFL/Lato-BoldItalic.ttf")
-
-# dev
-# sysfonts::font_add(
-#     "Lato",
-#     regular = "/Users/tom/Library/Fonts/Lato-Regular.ttf",
-#     bold = "/Users/tom/Library/Fonts/Lato-Bold.ttf",
-#     italic = "/Users/tom/Library/Fonts/Lato-Italic.ttf",
-    # bolditalic = "/Users/tom/Library/Fonts/Lato-BoldItalic.ttf")
-
-
-# ggplot theme
-theme_poster <- ggplot2::theme_grey(base_size = 16, base_family = "Lato") +
+# setup ggplot theme
+theme_poster <- ggplot2::theme_grey(base_size = 16) +
     ggplot2::theme(plot.background =
                        ggplot2::element_rect(fill = "transparent",
                                              colour = NA),
@@ -49,7 +31,7 @@ theme_poster <- ggplot2::theme_grey(base_size = 16, base_family = "Lato") +
                        ggplot2::element_rect(fill = "transparent",
                                              colour = NA))
 
-# colours
+# setup colours
 set1 <- RColorBrewer::brewer.pal(9, "Set1")
 heatscale <- RColorBrewer::brewer.pal(6, "YlOrRd")
 
