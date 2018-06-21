@@ -92,10 +92,12 @@ nj$edge.length[negbranch + 1] <- nj$edge.length[negbranch + 1] + branchdiff
 
 nj2 <- ape::drop.tip(nj, "fopius_arisanus")
 
-# tree
+# tree. scale is average # of SNPs per base
 gt <- ggplot(nj2, aes(x, y)) +
     geom_tree() +
     theme_tree() +
-    geom_treescale() +
+    geom_treescale(offset = -0.2) + # offset moves the scale bar label up and down
     geom_tiplab()
 gt
+
+ggsave("test.pdf", gt, width = 10, height = 7.5, units = "in")
