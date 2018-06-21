@@ -78,7 +78,7 @@ jpeg(jpeg_file,
      width = 208,
      height = 205,
      units = "mm",
-     res = 300,
+     res = 600,
      type = "cairo")
 grid.newpage()
 grid.draw(g)

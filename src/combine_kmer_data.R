@@ -155,10 +155,11 @@ kmer_plot <- ggplot(filter(all_hist_data, type == "Raw"),
 
 
 
-ggsave("kmer_plot.pdf",
+ggsave("kmer_plot.jpg",
        kmer_plot,
        width = width.out,
        height = height.out,
+       dpi = 600,
        units = "mm",
-       device = cairo_pdf)
+       device = "jpeg")
 
