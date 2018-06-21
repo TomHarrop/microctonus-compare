@@ -2,6 +2,7 @@ library(data.table)
 library(ggplot2)
 library(ggtree)
 library(grid)
+library(extrafont)
 
 #############
 # FUNCTIONS #
@@ -33,25 +34,6 @@ MakeLabels <- function(x) {
 #########
 # SETUP #
 #########
-
-# lato for plots
-my_sis <- Sys.info()["sysname"]
-if (my_sis == "Linux") {
-    sysfonts::font_add(
-        "Lato",
-        regular = "~/fonts/Lato2OFL/Lato-Regular.ttf",
-        bold = "~/fonts/Lato2OFL/Lato-Bold.ttf",
-        italic = "~/fonts/Lato2OFL/Lato-Italic.ttf",
-        bolditalic = "~/fonts/Lato2OFL/Lato-BoldItalic.ttf")
-}
-if(my_sis == "Darwin") {
-    sysfonts::font_add(
-        "Lato",
-        regular = "/Users/tom/Library/Fonts/Lato-Regular.ttf",
-        bold = "/Users/tom/Library/Fonts/Lato-Bold.ttf",
-        italic = "/Users/tom/Library/Fonts/Lato-Italic.ttf",
-        bolditalic = "/Users/tom/Library/Fonts/Lato-BoldItalic.ttf")
-}
 
 # ggplot theme
 theme_poster <- ggplot2::theme_grey(base_size = 18,
@@ -152,6 +134,7 @@ gt <- ggtree(nj2, ladderize = FALSE, size = 1) +
     xlim(0, 0.055) +
     theme_poster +
     theme(legend.position = "right",
+          panel.background = element_blank(),
           axis.text.y = element_blank(),
           axis.ticks.y = element_blank(),
           axis.title.x = element_text(hjust = 1),
@@ -159,31 +142,38 @@ gt <- ggtree(nj2, ladderize = FALSE, size = 1) +
     scale_color_brewer(palette = "Set1",
                        guide = guide_legend(title = NULL)) +
     scale_shape(guide = guide_legend(title = NULL)) +
-    xlab("SNPs per aligned base")
+    xlab(expression("SNPs"~"per"~"aligned"~"base"))
 gt2 <- gt  %<+%
     dd +
     geom_tiplab(aes(label = name,
                     colour = sexual),
                 parse = TRUE,
                 align = FALSE,
-                offset = 0.0035,
+                offset = 0.0075,
                 hjust = 0,
-                family = "Lato")+
+                family = "Lato",
+                size = 14)+
     geom_tiplab(aes(label = name,
                     colour = sexual,
                     image = img_url),
                 offset = 0.0005,
                 hjust = 0,
                 align = FALSE,
-                geom = "image") +
-    scale_size_identity() +
+                geom = "image",
+                size = 0.1) +
     geom_tippoint(aes(shape = social), size = 3)
-gt2
 
+# set aspect ratio
+gr <- ggplotGrob(gt2)
+for (k in 1:length(gr$grobs[[6]]$children[[6]]$children)) {
+    gr$grobs[[6]]$children[[6]]$children[[k]]$height <- unit(0.1, "native")
+    gr$grobs[[6]]$children[[6]]$children[[k]]$width <- unit(0.1, "native")
+}
 
-ggsave("test.jpeg",
-       device = "jpeg",
-       gt2,
-       width = 147,
-       height = 216,
-       units = "mm")
+ pdf(file = "test.pdf",
+     width = convertUnit(unit(216, "mm"), "in", valueOnly = TRUE),
+     height = convertUnit(unit(216, "mm"), "in", valueOnly = TRUE))
+grid.newpage()
+grid.draw(gr)
+dev.off()
+
