@@ -17,7 +17,8 @@ plot_data_file <- snakemake@input[["plot_data"]]
 jpeg_file <- snakemake@output[["jpeg_file"]]
 
 # dev
-#  plot_data_file <- "output/plot_data/mummer_test_data.Rds"
+# plot_data_file <- "output/plot_data/mummer_test_data.Rds"
+# jpeg_file <- "alignment_subset.jpg"
 
 ########
 # MAIN #
@@ -77,7 +78,8 @@ jpeg(jpeg_file,
      width = 208,
      height = 205,
      units = "mm",
-     res = 300)
+     res = 300,
+     type = "cairo")
 grid.newpage()
 grid.draw(g)
 dev.off()

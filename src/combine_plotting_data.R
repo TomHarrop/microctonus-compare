@@ -1,6 +1,7 @@
 #!/usr/bin/env Rscript
 
 library(tidyverse)
+library(extrafont)
 
 ###########
 # GLOBALS #
@@ -13,6 +14,27 @@ busco_files <- unlist(sapply(list.dirs("output/busco", recursive = FALSE),
                              recursive = FALSE,
                              pattern = "full_table*",
                              full.names = TRUE))
+
+#########
+# SETUP #
+#########
+
+# ggplot theme
+theme_poster <- ggplot2::theme_grey(base_size = 18,
+                                    base_family = "Lato") +
+    ggplot2::theme(plot.background =
+                       ggplot2::element_rect(fill = "transparent",
+                                             colour = NA),
+                   legend.background =
+                       ggplot2::element_rect(fill = "transparent",
+                                             colour = NA))
+
+# sizes
+width.out <- 210.25
+height.out <- 194.564
+
+# colours
+set1 <- RColorBrewer::brewer.pal(9, "Set1")
 
 ########
 # MAIN #
@@ -42,6 +64,7 @@ busco_cols <- unique(busco_results$Status)
 plot_data <- spread(busco_results, Status, busco_percent) %>% 
     full_join(stats_data, by = "assembly_name") %>% 
     gather(key, value, -assembly_name) %>% 
+    filter(assembly_name != "fopius_arisanus") %>% 
     arrange(assembly_name, key) %>% 
     separate(col = assembly_name,
              into = c("species", "strain", "processing", "kmer", "diplo"),
@@ -50,19 +73,43 @@ plot_data <- spread(busco_results, Status, busco_percent) %>%
                              "M. aethiopoides",
                              "M. hyperodae"),
            spec_strain = if_else(strain == "UNK",
-                                 species,
-                                 paste(species, strain)),
+                                 paste0(
+                                     "italic('",
+                                     species,
+                                     "')"),
+                                 paste0(
+                                     "italic('",
+                                     species,
+                                     "')~'",
+                                     strain,
+                                     "'")),
            kmer = as.numeric(gsub("[[:alpha:]]+", "", kmer))) %>% 
     select(-strain)
 
+label_vector <- plot_data %>% 
+    select(spec_strain) %>% 
+    distinct() %>% 
+    unlist(c())
+names(label_vector) <- label_vector
+label_vector <- sapply(label_vector, function(x) parse(text = bquote(.(x))))
 
 # busco plot, move to poster
-ggplot(filter(plot_data, key %in% busco_cols),
+busco_plot <- ggplot(filter(plot_data, key %in% busco_cols),
        aes(x = spec_strain, y = value, fill = key)) +
+    theme_poster +
+    theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
     xlab(NULL) + ylab("Percent") +
+    scale_x_discrete(labels = label_vector) +
     scale_fill_brewer(palette = "Set1",
                       guide = guide_legend(title = NULL)) +
     geom_col(position = position_dodge())
+
+ggsave("busco_plot.pdf",
+       busco_plot,
+       width = width.out,
+       height = height.out,
+       units = "mm",
+       device = cairo_pdf)
 
 # stats plot, move to poster
 plot_keys <- c("contig_bp", "n_scaffolds",
