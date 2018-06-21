@@ -6,6 +6,7 @@ sink(log, append = TRUE, type = "output")
 
 library(data.table)
 library(ggplot2)
+library(extrafont)
 library(grid)
 
 ###########
@@ -16,14 +17,15 @@ plot_data_file <- snakemake@input[["plot_data"]]
 jpeg_file <- snakemake@output[["jpeg_file"]]
 
 # dev
-# plot_data_file <- "output/plot_data/mummer_test_data.Rds"
+#  plot_data_file <- "output/plot_data/mummer_test_data.Rds"
 
 ########
 # MAIN #
 ########
 
 # setup ggplot theme
-theme_poster <- ggplot2::theme_grey(base_size = 16) +
+theme_poster <- ggplot2::theme_grey(base_size = 16, 
+                                    base_family = "Lato") +
     ggplot2::theme(plot.background =
                        ggplot2::element_rect(fill = "transparent",
                                              colour = NA),
@@ -80,12 +82,6 @@ jpeg(jpeg_file,
 grid.newpage()
 grid.draw(g)
 dev.off()
-
-# write to pdf
-# pdf(plot_file, width = 10, height = 7.5, bg = "transparent")
-# grid.newpage()
-# grid.draw(g)
-# dev.off()
 
 # write log
 sessionInfo()
