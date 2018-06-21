@@ -52,7 +52,7 @@ MakeLabels <- function(x) {
 # GLOBALS #
 ###########
 
-report_files <- snakemake@intput[["report_files"]]
+report_files <- snakemake@input[["report_files"]]
 distance_matrix_file <- snakemake@output[["distance_matrix"]]
 
 # dev
