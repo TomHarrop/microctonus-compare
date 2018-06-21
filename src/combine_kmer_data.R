@@ -59,13 +59,45 @@ hist_out_data <- bind_rows(lapply(hist_out_files, read_tsv),
                            .id = "assembly_name")
 all_hist_data <- bind_rows(list("Raw" = hist_data,
                                 "Normalised" = hist_out_data),
-                           .id = "type")
+                           .id = "type") %>%
+    separate(assembly_name, c("species", "strain"), "-") %>%
+    mutate(species = if_else(species == "Ma",
+                             "M. aethiopoides",
+                             "M. hyperodae"),
+           spec_strain = if_else(strain == "UNK",
+                                 paste0(
+                                     "italic('",
+                                     species,
+                                     "')"),
+                                 paste0(
+                                     "italic('",
+                                     species,
+                                     "')~'",
+                                     gsub("[[:digit:]]+", "", strain),
+                                     "'")))
+
 
 # read metadata
 bbnorm_metadata <- bind_rows(
     lapply(peaks_files, read_tsv, col_names = c("key", "value"), n_max = 13),
     .id = "assembly_name") %>% 
-    mutate(key = sub("#", "", key))
+    mutate(key = sub("#", "", key)) %>%
+    separate(assembly_name, c("species", "strain"), "-") %>%
+    mutate(species = if_else(species == "Ma",
+                         "M. aethiopoides",
+                         "M. hyperodae"),
+       spec_strain = if_else(strain == "UNK",
+                             paste0(
+                                 "italic('",
+                                 species,
+                                 "')"),
+                             paste0(
+                                 "italic('",
+                                 species,
+                                 "')~'",
+                                 gsub("[[:digit:]]+", "", strain),
+                                 "'")))
+       
 
 # read peaks
 main_peaks <- lapply(peaks_files,
@@ -76,12 +108,29 @@ main_peaks <- lapply(peaks_files,
     group_by(assembly_name) %>% 
     summarise(main_peak = centre[which.max(volume)],
               peak_start = start[which.max(volume)],
-              peak_stop = stop[which.max(volume)])
+              peak_stop = stop[which.max(volume)]) %>%
+    separate(assembly_name, c("species", "strain"), "-") %>%
+    mutate(species = if_else(species == "Ma",
+                             "M. aethiopoides",
+                             "M. hyperodae"),
+           spec_strain = if_else(strain == "UNK",
+                                 paste0(
+                                     "italic('",
+                                     species,
+                                     "')"),
+                                 paste0(
+                                     "italic('",
+                                     species,
+                                     "')~'",
+                                     gsub("[[:digit:]]+", "", strain),
+                                     "'")))
+
 
 # test plots (move to poster)
 Set1 <- RColorBrewer::brewer.pal(9, "Set1")
-ggplot(all_hist_data,
+kmer_plot <- ggplot(filter(all_hist_data, type == "Raw"),
        aes(x = `#Depth`, y = Unique_Kmers, colour = type)) +
+    theme_poster + 
     xlab("31-mer depth") + ylab("Number of unique 31-mers") +
     scale_y_continuous(
         trans = "log10",
@@ -91,8 +140,8 @@ ggplot(all_hist_data,
                        breaks = trans_breaks(function(x) log(x, 4),
                                              function(x) 4^x)) +
     scale_colour_brewer(palette = "Set1",
-                        guide = guide_legend(title = NULL)) +
-    facet_wrap(~assembly_name) +
+                        guide = FALSE) +
+    facet_wrap(~spec_strain, labeller = label_parsed) +
     geom_vline(data = main_peaks,
                mapping = aes(xintercept = main_peak),
                linetype = 2,
@@ -106,5 +155,10 @@ ggplot(all_hist_data,
 
 
 
-ggsave("kmer_plot_test.pdf", width = 10, height = 7.5, unit = "in")
+ggsave("kmer_plot.pdf",
+       kmer_plot,
+       width = width.out,
+       height = height.out,
+       units = "mm",
+       device = cairo_pdf)
 
