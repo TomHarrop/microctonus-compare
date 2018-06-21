@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
 
+library(extrafont)
 library(tidyverse)
 library(scales)
 
@@ -20,6 +21,26 @@ peaks_files <- list.files("data/microctonus_assemblies/norm",
                           pattern = "peaks.txt",
                           full.names = TRUE)
 
+#########
+# SETUP #
+#########
+
+# ggplot theme
+theme_poster <- ggplot2::theme_grey(base_size = 18,
+                                    base_family = "Lato") +
+    ggplot2::theme(plot.background =
+                       ggplot2::element_rect(fill = "transparent",
+                                             colour = NA),
+                   legend.background =
+                       ggplot2::element_rect(fill = "transparent",
+                                             colour = NA))
+
+# sizes
+width.out <- 210.25
+height.out <- 194.564
+
+# colours
+set1 <- RColorBrewer::brewer.pal(9, "Set1")
 
 ########
 # MAIN #

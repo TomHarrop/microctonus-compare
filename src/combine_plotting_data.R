@@ -95,7 +95,7 @@ label_vector <- sapply(label_vector, function(x) parse(text = bquote(.(x))))
 
 # busco plot, move to poster
 busco_plot <- ggplot(filter(plot_data, key %in% busco_cols),
-       aes(x = spec_strain, y = value, fill = key)) +
+                     aes(x = spec_strain, y = value, fill = key)) +
     theme_poster +
     theme(axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) +
     xlab(NULL) + ylab("Percent") +
@@ -125,17 +125,26 @@ pd2 <- filter(plot_data, key %in% plot_keys) %>%
         "'Longest scaffold (KB)'" = scaf_max / 1e3) %>% 
     gather(key, value, -spec_strain)
 
-ggplot(pd2,
+stats_plot <- ggplot(pd2,
        aes(x = spec_strain, y = value, fill = spec_strain)) +
+    theme_poster +
     theme(strip.background = element_blank(),
-          strip.placement = "outside") + 
+          strip.placement = "outside",
+          axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)) + 
     xlab(NULL) + ylab(NULL) +
     scale_fill_brewer(palette = "Set1",
                       guide = FALSE) +
+    scale_x_discrete(labels = label_vector) +
     facet_wrap(~ key,
                scales = "free_y",
                labeller = label_parsed,
                strip.position = "left") +
     geom_col()
 
+ggsave("stats_plot.pdf",
+       stats_plot,
+       width = width.out,
+       height = height.out,
+       units = "mm",
+       device = cairo_pdf)
 
