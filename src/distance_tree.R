@@ -1,17 +1,14 @@
+#!/usr/bin/env Rscript
+
+log <- file(snakemake@log[[1]], open = "wt")
+sink(log, type = "message")
+sink(log, append = TRUE, type = "output")
+
 library(data.table)
-library(ggtree)
 
 #############
 # FUNCTIONS #
 #############
-
-ReadMummerReport <- function(x){
-    fread(paste('grep "AlignedBases"', x),
-          header = FALSE,
-          nrows = 1,
-          col.names = "AlignedBases",
-          drop = c("V1", "V2"))
-}
 
 ParseTotalLength <- function(x) {
     fread(paste('grep "TotalLength"', x),
@@ -29,16 +26,40 @@ ParseTotalSnps <- function(x) {
           drop = c("V1", "V2"))
 }
 
+MakeLabels <- function(x) {
+    if(x == "fopius_arisanus"){
+        return("italic('Fopius arisanus')")
+    } else {
+        my_name_data <- unlist(strsplit(x, "_"))
+        names(my_name_data) <- c("species", "strain", "processing", "kmer", "diplo")
+        my_species <- ifelse(my_name_data["species"] == "ma",
+                             "M. aethiopoides",
+                             "M. hyperodae")
+        my_spec_strain <- ifelse(my_name_data["strain"] == "UNK",
+                                 paste0("italic('",
+                                        my_species,
+                                        "')"),
+                                 paste0("italic('",
+                                        my_species,
+                                        "')~'",
+                                        my_name_data["strain"],
+                                        "'"))
+        return(my_spec_strain)
+    }
+}
+
 ###########
 # GLOBALS #
 ###########
 
+report_files <- snakemake@intput[["report_files"]]
+distance_matrix_file <- snakemake@output[["distance_matrix"]]
 
 # dev
-report_files <- list.files("output/mummer",
-                           recursive = TRUE,
-                           pattern = "out.report",
-                           full.names = TRUE)
+# report_files <- list.files("output/mummer",
+#                            recursive = TRUE,
+#                            pattern = "out.report",
+#                            full.names = TRUE)
 ########
 # MAIN #
 ########
@@ -65,39 +86,22 @@ identity_data <- copy(mummer_stats)
 # make a distance matrix
 identity_data[, c("ref_assembly", "query_assembly") := 
                   tstrsplit(result_name, split = "-vs-")]
-# identity_data[, distance := (100 - as.numeric(aligned_pct)) / 100]
-
 reverse_comparisons <- rbind(
     identity_data[, .(query_assembly, ref_assembly, distance)],
     identity_data[, .(query_assembly = ref_assembly,
                       ref_assembly = query_assembly,
                       distance)])
-
 filtered_comparisons <- reverse_comparisons[!(query_assembly == "fopius_arisanus" |
                                                   ref_assembly == "fopius_arisanus")]
-
 distance_dt <- dcast(reverse_comparisons,
                      query_assembly ~ ref_assembly,
                      value.var = "distance",
                      fill = 0)
-
 distance_matrix <- as.matrix(data.frame(
     distance_dt, row.names = "query_assembly"))
 
-nj <- ape::root(ape::nj(distance_matrix), "mh_UNK_trim-decon_k41_diplo1")
-negbranch <- which(nj$edge.length < 0)
-branchdiff <- abs(nj$edge.length[negbranch])
-nj$edge.length[negbranch] <- 0
-nj$edge.length[negbranch + 1] <- nj$edge.length[negbranch + 1] + branchdiff
+# save output
+saveRDS(distance_matrix, distance_matrix_file)
 
-nj2 <- ape::drop.tip(nj, "fopius_arisanus")
-
-# tree. scale is average # of SNPs per base
-gt <- ggplot(nj2, aes(x, y)) +
-    geom_tree() +
-    theme_tree() +
-    geom_treescale(offset = -0.2) + # offset moves the scale bar label up and down
-    geom_tiplab()
-gt
-
-ggsave("test.pdf", gt, width = 10, height = 7.5, units = "in")
+# write log
+sessionInfo()

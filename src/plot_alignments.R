@@ -15,20 +15,56 @@ library(grid)
 plot_data_file <- snakemake@input[["plot_data"]]
 jpeg_file <- snakemake@output[["jpeg_file"]]
 
+# dev
+# plot_data_file <- "output/plot_data/mummer_test_data.Rds"
+
 ########
 # MAIN #
 ########
 
-YlOrRd <- RColorBrewer::brewer.pal(6, "YlOrRd")
+# setup
+# lato for plots
+sysfonts::font_add(
+    "Lato",
+    regular = "~/fonts/Lato2OFL/Lato-Regular.ttf",
+    bold = "~/fonts/Lato2OFL/Lato-Bold.ttf",
+    italic = "~/fonts/Lato2OFL/Lato-Italic.ttf",
+    bolditalic = "~/fonts/Lato2OFL/Lato-BoldItalic.ttf")
+
+# dev
+# sysfonts::font_add(
+#     "Lato",
+#     regular = "/Users/tom/Library/Fonts/Lato-Regular.ttf",
+#     bold = "/Users/tom/Library/Fonts/Lato-Bold.ttf",
+#     italic = "/Users/tom/Library/Fonts/Lato-Italic.ttf",
+    # bolditalic = "/Users/tom/Library/Fonts/Lato-BoldItalic.ttf")
+
+
+# ggplot theme
+theme_poster <- ggplot2::theme_grey(base_size = 16, base_family = "Lato") +
+    ggplot2::theme(plot.background =
+                       ggplot2::element_rect(fill = "transparent",
+                                             colour = NA),
+                   legend.background =
+                       ggplot2::element_rect(fill = "transparent",
+                                             colour = NA))
+
+# colours
+set1 <- RColorBrewer::brewer.pal(9, "Set1")
+heatscale <- RColorBrewer::brewer.pal(6, "YlOrRd")
+
+# read data
 pd <- readRDS(plot_data_file)
+
+# make plot
 gp <- ggplot(pd,
              aes(x = ref_coord / 1e6,
                  y = query_coord / 1e6,
                  colour = `%IDY`)) +
+    theme_poster +
     theme(strip.background = element_blank(),
           strip.placement = "outside",
-          legend.position = c(3.5/4, 1.5/4),
-          legend.key.size = unit(8, "pt")) +
+          legend.position = c(3.5/4, 1.5/4)) +
     facet_grid(query_label ~ ref_label,
                scales = "free",
                as.table = TRUE,
@@ -36,7 +72,7 @@ gp <- ggplot(pd,
                labeller = label_parsed) +
     xlab("Position in reference (MB)") + 
     ylab("Position in query (MB)") +
-    scale_colour_gradientn(colours = YlOrRd,
+    scale_colour_gradientn(colours = heatscale,
                            guide = guide_colourbar(title = "Identity (%)")) +
     geom_point(shape = 18, alpha = 0.5)
 
@@ -53,7 +89,12 @@ for(panel in hidden_panels){
 }
 
 # write to jpeg since PDF is too big
-jpeg(jpeg_file, width = 10, height = 7.5, units = "in", res = 300, bg = "transparent")
+jpeg(jpeg_file,
+     width = 208,
+     height = 205,
+     units = "mm",
+     res = 300,
+     bg = "transparent")
 grid.newpage()
 grid.draw(g)
 dev.off()

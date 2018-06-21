@@ -68,6 +68,25 @@ rule plot_alignments:
         'src/plot_alignments.R'
 
 
+rule make_distance_matrix:
+    input:
+        report_files = expand('output/mummer/{ref}-vs-{query}/out.report',
+                              pairwise_combinations,
+                              ref=fasta_files,
+                              query=fasta_files)
+    output:
+        distance_matrix = 'output/plot_data/distance_matrix.Rds'
+    log:
+        'output/logs/make_distance_matrix.log'
+    benchmark:
+        'output/benchmarks/make_distance_matrix.tsv'
+    threads:
+        1
+    singularity:
+        r_container
+    script:
+        'src/distance_tree.R'
+
 # plot data is a few hundred million points, make a small subset of data for testing the plot
 rule subset_plot_data:  
     input:
@@ -89,7 +108,6 @@ rule subset_plot_data:
         'saveRDS(x[sample(.N, 10000)], \'{output.plot_data}\') \" '
         '&> {log}'
 
-
 rule combine_mummer_plot_data:
     input:
         plot_data = expand('output/plot_data/mummer_{ref}-vs-{query}.Rds',
@@ -108,7 +126,6 @@ rule combine_mummer_plot_data:
         r_container
     script:
         'src/combine_mummer_plot_data.R'
-
 
 rule read_mummer_output:
     input:
@@ -132,7 +149,8 @@ rule wga:
         query = 'output/filtered_assemblies/{query}_final-scaffolds.fa'
     output:
         'output/mummer/{ref}-vs-{query}/out.delta',
-        'output/mummer/{ref}-vs-{query}/out.1coords'
+        'output/mummer/{ref}-vs-{query}/out.1coords',
+        'output/mummer/{ref}-vs-{query}/out.report'
     log:
         str(pathlib2.Path(resolve_path('output/logs/'),
                           'mummer_{ref}-vs-{query}.log'))
