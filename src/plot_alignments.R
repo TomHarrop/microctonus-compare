@@ -26,10 +26,10 @@ jpeg_file <- snakemake@output[["jpeg_file"]]
 # lato for plots
 sysfonts::font_add(
     "Lato",
-    regular = "~/fonts/Lato2OFL/Lato-Regular.ttf",
-    bold = "~/fonts/Lato2OFL/Lato-Bold.ttf",
-    italic = "~/fonts/Lato2OFL/Lato-Italic.ttf",
-    bolditalic = "~/fonts/Lato2OFL/Lato-BoldItalic.ttf")
+    regular = "/Volumes/userdata/staff_users/tomharrop/fonts/Lato2OFL/Lato-Regular.ttf",
+    bold = "/Volumes/userdata/staff_users/tomharrop/fonts/Lato2OFL/Lato-Bold.ttf",
+    italic = "/Volumes/userdata/staff_users/tomharrop/fonts/Lato2OFL/Lato-Italic.ttf",
+    bolditalic = "/Volumes/userdata/staff_users/tomharrop/fonts/Lato2OFL/Lato-BoldItalic.ttf")
 
 # dev
 # sysfonts::font_add(

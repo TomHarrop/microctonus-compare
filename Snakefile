@@ -49,7 +49,8 @@ rule target:
         expand('output/stats/{fasta_file}.tsv',
                fasta_file=fasta_files),
         'output/plot_data/mummer_plot.jpg',
-        'output/plot_data/mummer_test_data.Rds'
+        'output/plot_data/mummer_test_data.Rds',
+        'output/plot_data/distance_matrix.Rds'
 
 rule plot_alignments:
     input:
@@ -81,6 +82,8 @@ rule make_distance_matrix:
     benchmark:
         'output/benchmarks/make_distance_matrix.tsv'
     threads:
+        1
+    priority:
         1
     singularity:
         r_container
