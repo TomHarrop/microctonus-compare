@@ -15,10 +15,12 @@ library(grid)
 
 plot_data_file <- snakemake@input[["plot_data"]]
 jpeg_file <- snakemake@output[["jpeg_file"]]
+pdf_file <- snakemake@output[["pdf_file"]]
 
 # dev
 # plot_data_file <- "output/plot_data/mummer_test_data.Rds"
 # jpeg_file <- "alignment_subset.jpg"
+# pdf_file <- "alignment_subset.pdf"
 
 ########
 # MAIN #
@@ -26,7 +28,7 @@ jpeg_file <- snakemake@output[["jpeg_file"]]
 
 # setup ggplot theme
 theme_poster <- ggplot2::theme_grey(base_size = 16, 
-                                    base_family = "Lato") +
+                                       base_family = "Lato") +
     ggplot2::theme(plot.background =
                        ggplot2::element_rect(fill = "transparent",
                                              colour = NA),
@@ -47,9 +49,10 @@ gp <- ggplot(pd,
                  y = query_coord / 1e6,
                  colour = `%IDY`)) +
     theme_poster +
-    theme(strip.background = element_blank(),
-          strip.placement = "outside",
-          legend.position = c(3.5/4, 1.5/4)) +
+    theme(
+        strip.background = element_blank(),
+        strip.placement = "outside",
+        legend.position = c(3.5/4, 1.5/4)) +
     facet_grid(query_label ~ ref_label,
                scales = "free",
                as.table = TRUE,
@@ -62,13 +65,16 @@ gp <- ggplot(pd,
     geom_point(shape = 18, alpha = 0.5)
 
 # hide the empty panels
-hidden_panels <- c("panel-1-2",
-                   "panel-1-3",
-                   "panel-1-4",
-                   "panel-2-3",
-                   "panel-2-4",
-                   "panel-3-4")
+hidden_panels <- c(
+    "panel-1-2",
+    "panel-1-3",
+    "panel-1-4",
+    "panel-2-3",
+    "panel-2-4",
+    "panel-3-4"
+)
 g <- ggplotGrob(gp)
+g$widths[[4]] <- unit(0.75, "cm")
 for(panel in hidden_panels){
     g$grobs[[which(g$layout$name == panel)]] <- nullGrob()
 }
@@ -80,6 +86,20 @@ jpeg(jpeg_file,
      units = "mm",
      res = 600,
      type = "cairo")
+grid.newpage()
+grid.draw(g)
+dev.off()
+
+# try pdf anyway
+cairo_pdf(pdf_file,
+          width = grid::convertUnit(grid::unit(208, "mm"),
+                                    "in",
+                                    valueOnly = TRUE),
+          height = grid::convertUnit(grid::unit(205, "mm"),
+                                     "in",
+                                     valueOnly = TRUE),
+          family = "Lato",
+          bg = "transparent")
 grid.newpage()
 grid.draw(g)
 dev.off()

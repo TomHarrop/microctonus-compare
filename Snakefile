@@ -56,7 +56,8 @@ rule plot_alignments:
     input:
         plot_data = 'output/plot_data/mummer_combined.Rds'
     output:
-        jpeg_file = 'output/plot_data/mummer_plot.jpg'
+        jpeg_file = 'output/plot_data/mummer_plot.jpg',
+        pdf_file = 'output/plot_data/mummer_plot.pdf'
     log:
         'output/logs/plot_alignments.log'
     benchmark:
