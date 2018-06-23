@@ -52,6 +52,8 @@ names(hist_out_files) <- sub("_hist_out.txt", "", basename(hist_out_files))
 names(peaks_files) <- sub("_peaks.txt", "", basename(peaks_files))
 
 
+
+
 # read histogram data
 hist_data <- bind_rows(lapply(hist_files, read_tsv),
                        .id = "assembly_name")
@@ -137,6 +139,8 @@ kmer_plot <- ggplot(filter(all_hist_data, type == "Raw"),
         labels = trans_format("log10", math_format(10^.x)),
         breaks = trans_breaks("log10", function(x) 10^x)) +
     scale_x_continuous(trans = log_trans(base = 4),
+                       labels = trans_format(function(x) log(x, 4),
+                                             math_format(4^.x)),
                        breaks = trans_breaks(function(x) log(x, 4),
                                              function(x) 4^x)) +
     scale_colour_brewer(palette = "Set1",
@@ -157,8 +161,8 @@ kmer_plot <- ggplot(filter(all_hist_data, type == "Raw"),
 
 ggsave("kmer_plot.jpg",
        kmer_plot,
-       width = width.out,
-       height = height.out,
+       width = 147.175,
+       height = 205.373,
        dpi = 600,
        units = "mm",
        device = "jpeg")

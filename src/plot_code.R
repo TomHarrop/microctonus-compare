@@ -170,11 +170,15 @@ gr <- ggplotGrob(gt2)
 #     gr$grobs[[6]]$children[[6]]$children[[k]]$width <- unit(0.1, "native")
 # }
 
-cairo_pdf(file = "test.pdf",
-    width = convertUnit(unit(147, "mm"), "in", valueOnly = TRUE),
-    height = convertUnit(unit(147, "mm"), "in", valueOnly = TRUE))
-grid.newpage()
-grid.draw(gr)
-dev.off()
+# cairo_pdf(file = "test.pdf",
+#     width = convertUnit(unit(147, "mm"), "in", valueOnly = TRUE),
+#     height = convertUnit(unit(147, "mm"), "in", valueOnly = TRUE))
+# grid.newpage()
+# grid.draw(gr)
+# dev.off()
+# Sys.setenv(R_GSCMD = "/usr/local/bin/gsx")
+# embed_fonts("test.pdf")
+
+ggsave("tree.pdf", gt2, width = 210.25, height = 210.25, units = "mm", device = cairo_pdf)
 Sys.setenv(R_GSCMD = "/usr/local/bin/gsx")
-embed_fonts("test.pdf", )
+embed_fonts("tree.pdf")
