@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import itertools
-import pathlib2
+import pathlib as pathlib2
 
 
 #############
